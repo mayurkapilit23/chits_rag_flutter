@@ -2,10 +2,10 @@ import 'auth_local_storage.dart';
 import 'auth_services.dart';
 
 class AuthRepo {
-  late final AuthServices api;
-  late final AuthLocalStorage storage;
+  final AuthServices api;
+  final AuthLocalStorage storage;
 
-  AuthRepo({required this.api, required this.storage});
+  AuthRepo(this.api, this.storage);
 
   Future<void> sendOtp(String phone) {
     return api.sendOtp(phone);

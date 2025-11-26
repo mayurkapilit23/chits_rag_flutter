@@ -2,6 +2,8 @@ import 'package:chatgpt_clone/features/auth/bloc/auth_bloc.dart';
 import 'package:chatgpt_clone/features/auth/repo/auth_repo.dart';
 import 'package:chatgpt_clone/features/auth/repo/auth_services.dart';
 import 'package:chatgpt_clone/features/gpt/bloc/gpt_bloc.dart';
+import 'package:chatgpt_clone/features/gpt/repo/gpt_repo.dart';
+import 'package:chatgpt_clone/features/gpt/repo/gpt_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,13 +25,11 @@ class MyApp extends StatefulWidget {
 class MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    final AuthServices api = AuthServices();
-    final AuthLocalStorage storage = AuthLocalStorage();
     return MultiBlocProvider(
       providers: [
-        BlocProvider<GptBloc>(create: (_) => GptBloc()),
+        BlocProvider<GptBloc>(create: (_) => GptBloc(GptRepo(GptServices()))),
         BlocProvider<AuthBloc>(
-          create: (_) => AuthBloc(AuthRepo(api: api, storage: storage)),
+          create: (_) => AuthBloc(AuthRepo(AuthServices(), AuthLocalStorage())),
         ),
       ],
       child: MaterialApp(

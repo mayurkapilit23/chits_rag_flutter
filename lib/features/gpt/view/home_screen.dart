@@ -1,11 +1,9 @@
-import 'dart:math';
-
-import 'package:chatgpt_clone/features/auth/view/login_page.dart';
 import 'package:chatgpt_clone/features/gpt/widgets/typing_indicator.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/colors/app_colors.dart';
 import '../../../main.dart';
+import '../../auth/view/login.dart';
 import '../widgets/message_bubble.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,16 +13,23 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
-  final List<Conversation> _conversations = List.generate(
-    6,
-    (i) => Conversation(
-      id: 'conv_$i',
-      title: i == 0 ? 'General' : 'Conversation ${i + 1}',
-      messages: _sampleMessages(i == 0),
-    ),
-  );
+class HomePageState extends State<HomePage> {
+  final List<Message> _messages = [];
+  // final List<Conversation> _conversations = [];
+
+  final List<Conversation> _conversations = [
+    Conversation(id: 'conv_0', title: 'New Chat', messages: []),
+  ];
+
+  // final List<Conversation> _conversations = List.generate(
+  //   6,
+  //   (i) => Conversation(
+  //     id: 'conv_$i',
+  //     title: i == 0 ? 'General' : 'Conversation ${i + 1}',
+  //     // messages: _sampleMessages(i == 0),
+  //     messages: [],
+  //   ),
+  // );
 
   int _selectedConversationIndex = 0;
   final ScrollController _scrollController = ScrollController();
@@ -65,19 +70,19 @@ class HomePageState extends State<HomePage>
     _scrollToBottom();
 
     // Simulate assistant reply after a short delay (replace with API call)
-    Future.delayed(Duration(milliseconds: 800 + Random().nextInt(900)), () {
-      final reply = Message(
-        id: UniqueKey().toString(),
-        text: _autoReplyFor(text),
-        time: DateTime.now(),
-        isUser: false,
-      );
-      setState(() {
-        conv.messages.add(reply);
-        _isTyping = false;
-      });
-      _scrollToBottom();
-    });
+    // Future.delayed(Duration(milliseconds: 800 + Random().nextInt(900)), () {
+    //   final reply = Message(
+    //     id: UniqueKey().toString(),
+    //     text: _autoReplyFor(text),
+    //     time: DateTime.now(),
+    //     isUser: false,
+    //   );
+    //   setState(() {
+    //     conv.messages.add(reply);
+    //     _isTyping = false;
+    //   });
+    //   _scrollToBottom();
+    // });
   }
 
   void _createNewConversation() {
@@ -120,36 +125,16 @@ class HomePageState extends State<HomePage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'ChatGPT',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
+              ListTile(
+                leading: Icon(Icons.edit_document, color: Colors.black),
 
-                    // IconButton(
-                    //   icon: Icon(Icons.edit_document),
-                    //   onPressed: widget.onToggleTheme,
-                    // ),
-                    IconButton(
-                      icon: Icon(Icons.edit_document),
-                      onPressed: _createNewConversation,
-                    ),
-                  ],
+                title: Text(
+                  'New chat',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                onTap: _createNewConversation,
               ),
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              //   child: ElevatedButton.icon(
-              //     onPressed: _createNewConversation,
-              //     icon: Icon(Icons.add),
-              //     label: Text('New chat'),
-              //   ),
-              // ),
+
               SizedBox(height: 8),
               Expanded(
                 child: ListView.builder(
@@ -164,9 +149,6 @@ class HomePageState extends State<HomePage>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.black),
                       ),
-                      // subtitle: c.messages.isNotEmpty
-                      //     ? Text(_previewText(c.messages.last.text))
-                      //     : Text('No messages yet.'),
                       selected: index == _selectedConversationIndex,
                       selectedTileColor: Colors.indigo.withOpacity(0.15),
 
@@ -197,10 +179,13 @@ class HomePageState extends State<HomePage>
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => LoginPage()),
-                    );
+                    showMobileNumberSheet(context);
+                    // Navigator.pop(context);
+
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(builder: (_) => LoginPage()),
+                    // );
                   },
                   child: Text('Login'),
                 ),
@@ -213,6 +198,10 @@ class HomePageState extends State<HomePage>
         surfaceTintColor: Colors.transparent,
         backgroundColor: AppColors.primaryColor,
         actions: [
+          IconButton(
+            icon: Icon(Icons.edit_document),
+            onPressed: _createNewConversation,
+          ),
           IconButton(
             icon: Icon(Icons.settings_outlined),
             onPressed: () => _showSettingsSheet(),
@@ -267,112 +256,70 @@ class HomePageState extends State<HomePage>
 
   Widget _buildComposer() {
     return SafeArea(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-        child: Row(
-          children: [
-            IconButton(
-              style: IconButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.black,
-                shadowColor: Colors.black.withOpacity(0.3),
-                elevation: 8, // smooth shadow
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              icon: Icon(Icons.add, size: 30),
-              onPressed: _showAttachmentSheet,
-            ),
-
-            SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02), // soft shadow
-                      blurRadius: 5,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              ///  Text Field
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  minLines: 1,
+                  maxLines: 6,
+                  onChanged: (_) => setState(() {}), // update button
+                  decoration: const InputDecoration(
+                    hintText: "Ask ChatGPT...",
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                  ),
+                  onSubmitted: _sendMessage,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        minLines: 1,
-                        maxLines: 6,
-                        decoration: InputDecoration(
-                          hintText: 'Ask ChatGPT',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          isDense: true, // reduces height
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 5, // reduce here
-                            horizontal: 10,
+              ),
+
+              const SizedBox(width: 6),
+
+              /// Mic OR Send button (animated)
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
+                child: _textController.text.trim().isEmpty
+                    ? IconButton(
+                        key: const ValueKey('mic'),
+                        icon: const Icon(Icons.mic_none),
+                        color: Colors.black87,
+                        onPressed: () {},
+                      )
+                    : Container(
+                        key: const ValueKey('send'),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_upward,
+                            color: Colors.white,
                           ),
-                          border: InputBorder.none,
+                          onPressed: () => _sendMessage(_textController.text),
                         ),
-                        onSubmitted: _sendMessage,
                       ),
-                    ),
-
-                    // if (_textController.text.isEmpty) ...[
-                    //   IconButton(icon: Icon(Icons.mic_none), onPressed: () {}),
-                    // ] else
-                    //   ...[],
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: IconButton(
-                        style: IconButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
-                        ),
-                        icon: Icon(Icons.arrow_upward),
-                        onPressed: () => _sendMessage(_textController.text),
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            ),
-            // SizedBox(width: 5),
-            // FloatingActionButton(
-            //   heroTag: 'send_btn',
-            //   mini: true,
-            //   onPressed: () => _sendMessage(_textController.text),
-            //   child: Icon(Icons.send),
-            // ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAttachmentSheet() {
-    showModalBottomSheet(
-      backgroundColor: AppColors.primaryColor,
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: Icon(Icons.image),
-              title: Text('Image'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: Icon(Icons.insert_drive_file),
-              title: Text('File'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: Icon(Icons.cancel),
-              title: Text('Cancel'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -386,15 +333,11 @@ class HomePageState extends State<HomePage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ListTile(
-            //   leading: Icon(Icons.palette_outlined),
-            //   title: Text('Theme'),
-            //   subtitle: Text('Toggle light / dark mode'),
-            //   trailing: Switch(
-            //     value: widget.themeMode == ThemeMode.dark,
-            //     onChanged: (_) => widget.onToggleTheme(),
-            //   ),
-            // ),
+            ListTile(
+              leading: Icon(Icons.palette_outlined),
+              title: Text('Theme'),
+              subtitle: Text('Toggle light / dark mode'),
+            ),
             ListTile(
               leading: Icon(Icons.history),
               title: Text('Clear conversation'),
@@ -416,41 +359,42 @@ class HomePageState extends State<HomePage>
     );
   }
 
-  static List<Message> _sampleMessages(bool withContent) {
-    if (!withContent) return [];
-    return [
-      Message(
-        id: 'm1',
-        text: 'Hello! How can I help you today?',
-        time: DateTime.now().subtract(Duration(minutes: 7)),
-        isUser: false,
-      ),
-      Message(
-        id: 'm2',
-        text:
-            'I want to build a Flutter app similar to ChatGPT. Can you show me the UI?',
-        time: DateTime.now().subtract(Duration(minutes: 6)),
-        isUser: true,
-      ),
-      Message(
-        id: 'm3',
-        text:
-            'Absolutely — I can help with a UI and connect it to an API. What features do you want?',
-        time: DateTime.now().subtract(Duration(minutes: 5)),
-        isUser: false,
-      ),
-    ];
-  }
+  // static List<Message> _sampleMessages(bool withContent) {
+  //   if (!withContent) return [];
+  //   return [
+  //     Message(
+  //       id: 'm1',
+  //       text: 'Hello! How can I help you today?',
+  //       time: DateTime.now().subtract(Duration(minutes: 7)),
+  //       isUser: false,
+  //     ),
+  //     Message(
+  //       id: 'm2',
+  //       text:
+  //           'I want to build a Flutter app similar to ChatGPT. Can you show me the UI?',
+  //       time: DateTime.now().subtract(Duration(minutes: 6)),
+  //       isUser: true,
+  //     ),
+  //     Message(
+  //       id: 'm3',
+  //       text:
+  //           'Absolutely — I can help with a UI and connect it to an API. What features do you want?',
+  //       time: DateTime.now().subtract(Duration(minutes: 5)),
+  //       isUser: false,
+  //     ),
+  //   ];
+  // }
 
-  static String _autoReplyFor(String input) {
-    // Simple canned reply generator for demo purposes.
-    if (input.toLowerCase().contains('flutter'))
-      return 'Nice — Flutter is a great choice! I can give you code, UI patterns, and tips.';
-    if (input.trim().length < 10) return 'Could you provide a bit more detail?';
-    return 'Here is a short mock reply that simulates the assistant responding to your message: "${input.trim()}"';
-  }
-
-  static String _previewText(String text) {
-    return text.length > 40 ? text.substring(0, 40) + '...' : text;
-  }
+  //   static String _autoReplyFor(String input) {
+  //     // Simple canned reply generator for demo purposes.
+  //     if (input.toLowerCase().contains('flutter')) {
+  //       return 'Nice — Flutter is a great choice! I can give you code, UI patterns, and tips.';
+  //     }
+  //     if (input.trim().length < 10) return 'Could you provide a bit more detail?';
+  //     return 'Here is a short mock reply that simulates the assistant responding to your message: "${input.trim()}"';
+  //   }
+  //
+  //   static String _previewText(String text) {
+  //     return text.length > 40 ? text.substring(0, 40) + '...' : text;
+  //   }
 }
