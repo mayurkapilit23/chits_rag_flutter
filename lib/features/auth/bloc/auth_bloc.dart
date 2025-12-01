@@ -10,7 +10,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc(this.repo) : super(AuthInitial()) {
     on<SendOtpEvent>(_onSendOtp);
     on<VerifyOtpEvent>(_onVerifyOtp);
-    on<CheckAuthStatusEvent>(_onCheckAuth);
   }
 
   Future<void> _onSendOtp(SendOtpEvent event, Emitter<AuthState> emit) async {
@@ -33,18 +32,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthenticatedState(token));
     } catch (e) {
       emit(AuthErrorState(e.toString()));
-    }
-  }
-
-  Future<void> _onCheckAuth(
-    CheckAuthStatusEvent event,
-    Emitter<AuthState> emit,
-  ) async {
-    final token = await repo.getSavedToken();
-    if (token != null) {
-      emit(AuthenticatedState(token));
-    } else {
-      emit(UnauthenticatedState());
     }
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import 'otp.dart';
+import 'otp_verification_sheet.dart';
 
 void showMobileNumberSheet(BuildContext context) {
   showModalBottomSheet(

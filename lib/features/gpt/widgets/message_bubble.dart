@@ -1,16 +1,20 @@
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/colors/app_colors.dart';
-import '../../../main.dart';
+import '../model/message.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
-  const MessageBubble({super.key, required this.message});
+  final bool animate; // only last bot message should animate
+
+  const MessageBubble({super.key, required this.message, this.animate = false});
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
-    final bubbleColor = isUser ? AppColors.userBubbleColor : Colors.transparent;
+
+    final bubbleColor = Colors.grey.shade200;
+
     final textColor = isUser
         ? Colors.black
         : Theme.of(context).textTheme.bodyLarge?.color;
@@ -23,12 +27,6 @@ class MessageBubble extends StatelessWidget {
             : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // if (!isUser) ...[
-          //   Padding(
-          //     padding: const EdgeInsets.only(right: 8.0),
-          //     child: CircleAvatar(child: Icon(Icons.smart_toy, size: 18)),
-          //   ),
-          // ],
           Flexible(
             child: Column(
               crossAxisAlignment: isUser
@@ -38,41 +36,51 @@ class MessageBubble extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     color: bubbleColor,
-                    borderRadius: BorderRadius.circular(50),
-                    // boxShadow: [
-                    //   BoxShadow(
-                    //     color: Colors.black12,
-                    //     offset: Offset(0, 2),
-                    //     blurRadius: 6,
-                    //   ),
-                    // ],
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        offset: Offset(0, 0.2),
+                        blurRadius: 0,
+                      ),
+                    ],
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: SelectableText(
-                    message.text,
-                    style: TextStyle(color: textColor, fontSize: 15),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
                   ),
+                  child: _buildMessageContent(textColor),
                 ),
-                // SizedBox(height: 4),
-                // Text(
-                //   _formatTime(message.time),
-                //   style: TextStyle(fontSize: 11, color: Colors.grey),
-                // ),
               ],
             ),
           ),
-          // if (isUser) ...[
-          //   SizedBox(width: 8),
-          //   CircleAvatar(child: Text('Y')), // Y for you
-          // ],
         ],
       ),
     );
   }
 
-  static String _formatTime(DateTime t) {
-    final h = t.hour.toString().padLeft(2, '0');
-    final m = t.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+  Widget _buildMessageContent(Color? textColor) {
+    // USER MESSAGE → NORMAL TEXT
+    if (message.isUser || !animate) {
+      return SelectableText(
+        message.text,
+        style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+      );
+    }
+
+    // BOT MESSAGE (last one only) → TYPEWRITER
+    return AnimatedTextKit(
+      key: ValueKey("bot-${message.id}-${message.text.length}"),
+      isRepeatingAnimation: false,
+      displayFullTextOnTap: true,
+      animatedTexts: [
+        TypewriterAnimatedText(
+          message.text,
+          textStyle: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+          speed: const Duration(milliseconds: 40),
+          cursor: "|",
+        ),
+      ],
+    );
   }
 }

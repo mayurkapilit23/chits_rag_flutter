@@ -1,3 +1,4 @@
+import 'package:chatgpt_clone/features/auth/models/login_response_model.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class AuthState extends Equatable {}
@@ -18,10 +19,12 @@ class OtpSentState extends AuthState {
 }
 
 class AuthenticatedState extends AuthState {
-  final String token;
-  AuthenticatedState(this.token);
+  final LoginResponseModel model;
+
+  AuthenticatedState(this.model);
+
   @override
-  List<Object?> get props => [token];
+  List<Object?> get props => [model];
 }
 
 class UnauthenticatedState extends AuthState {
@@ -31,7 +34,9 @@ class UnauthenticatedState extends AuthState {
 
 class AuthErrorState extends AuthState {
   final String message;
+
   AuthErrorState(this.message);
+
   @override
   List<Object?> get props => [message];
 }

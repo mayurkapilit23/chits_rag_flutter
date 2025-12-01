@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:chatgpt_clone/features/auth/models/login_response_model.dart';
 import 'package:http/http.dart' as http;
 
 class AuthServices {
@@ -20,7 +21,7 @@ class AuthServices {
     }
   }
 
-  Future<String> verifyOtp(String phone, String otp) async {
+  Future<LoginResponseModel> verifyOtp(String phone, String otp) async {
     final url = Uri.parse("$baseUrl/api/verifyotp?Mobileno=$phone&otp=$otp");
     final res = await http.get(
       url,
@@ -31,9 +32,10 @@ class AuthServices {
       throw Exception("OTP verification failed");
     }
 
-    final data = jsonDecode(res.body);
+    final data = LoginResponseModel.fromJson(jsonDecode(res.body));
     log("data:$data");
+    print("data : $data");
 
-    return data['pToken']; // your backend response
+    return data; // your backend response
   }
 }
