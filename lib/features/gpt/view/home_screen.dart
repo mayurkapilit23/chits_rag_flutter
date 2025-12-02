@@ -1,3 +1,5 @@
+import 'package:chatgpt_clone/features/auth/bloc/auth_bloc.dart';
+import 'package:chatgpt_clone/features/auth/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,9 +12,14 @@ import '../bloc/gpt_state.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/typing_indicator.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   // UI Controllers
   final ScrollController _scroll = ScrollController();
 
@@ -32,7 +39,26 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GptBloc, GptState>(
+    return BlocConsumer<GptBloc, GptState>(
+      listenWhen: (prev, curr) {
+        // Only scroll when the messages list grows
+        if (prev is GptLoadedState && curr is GptLoadedState) {
+          final prevCount = prev
+              .conversations[prev.selectedConversationIndex]
+              .messages
+              .length;
+          final currCount = curr
+              .conversations[curr.selectedConversationIndex]
+              .messages
+              .length;
+
+          return currCount > prevCount; // scroll only on new message
+        }
+        return false;
+      },
+      listener: (context, state) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      },
       builder: (context, state) {
         if (state is GptInitialState) {
           context.read<GptBloc>().add(LoadInitialDataEvent());
@@ -48,27 +74,29 @@ class HomeScreen extends StatelessWidget {
           );
         }
 
-        //error state
+        //error state - show snackbar but keep UI visible
         if (state is GptErrorState) {
-          return Scaffold(
-            backgroundColor: AppColors.primaryColor,
-            body: Center(
-              child: Text(
-                state.message,
-                style: TextStyle(color: Colors.black, fontSize: 18),
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
               ),
-            ),
-          );
+            );
+          });
         }
 
-        //loaded state (main UI)
-        if (state is GptLoadedState || state is GptMessageSendingState) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _scrollToBottom(),
-          );
+        //loaded state (main UI) - also shown when error occurs
+        if (state is GptLoadedState ||
+            state is GptMessageSendingState ||
+            state is GptErrorState) {
+          // WidgetsBinding.instance.addPostFrameCallback(
+          //   (_) => ,
+          // );
+          _scrollToBottom();
           final loaded = state as GptLoadedState;
           final conv = loaded.conversations[loaded.selectedConversationIndex];
-
           return Scaffold(
             backgroundColor: AppColors.primaryColor,
             drawer: _buildDrawer(context, loaded),
@@ -104,6 +132,11 @@ class HomeScreen extends StatelessWidget {
                         animate:
                             !conv.messages[index].isUser &&
                             index == conv.messages.length - 1,
+                        onTextChanged: () {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToBottom(); // ← instantly scroll while animating
+                          });
+                        },
                       );
                     },
                   ),
@@ -123,99 +156,105 @@ class HomeScreen extends StatelessWidget {
 
   //drawer ui
   Widget _buildDrawer(BuildContext context, GptLoadedState state) {
-    return Drawer(
-      backgroundColor: Colors.white,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // NEW CHAT BUTTON
-            ListTile(
-              leading: Icon(Icons.add),
-              title: Text(
-                "New Chat",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              onTap: () {
-                context.read<GptBloc>().add(CreateConversationEvent());
-                Navigator.pop(context);
-              },
-            ),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authStates) {
+        return Drawer(
+          backgroundColor: Colors.white,
+          child: SafeArea(
+            child: Column(
+              children: [
+                // NEW CHAT BUTTON
+                ListTile(
+                  leading: Icon(Icons.add),
+                  title: Text(
+                    "New Chat",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () {
+                    context.read<GptBloc>().add(CreateConversationEvent());
+                    Navigator.pop(context);
+                  },
+                ),
 
-            Divider(),
+                Divider(),
 
-            //conversation list
-            Expanded(
-              child: ListView.builder(
-                itemCount: state.conversations.length,
-                itemBuilder: (context, index) {
-                  final c = state.conversations[index];
-                  return ListTile(
-                    title: Text(
-                      c.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    selected: index == state.selectedConversationIndex,
-                    selectedTileColor: Colors.grey.withOpacity(0.15),
+                //conversation list
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: state.conversations.length,
+                    itemBuilder: (context, index) {
+                      final c = state.conversations[index];
+                      return ListTile(
+                        title: Text(
+                          c.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        selected: index == state.selectedConversationIndex,
+                        selectedTileColor: Colors.grey.withOpacity(0.15),
 
-                    onTap: () {
-                      context.read<GptBloc>().add(
-                        SelectConversationEvent(index),
+                        onTap: () {
+                          context.read<GptBloc>().add(
+                            SelectConversationEvent(index),
+                          );
+                          Navigator.pop(context);
+                        },
+
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete_outline),
+                          onPressed: () {
+                            context.read<GptBloc>().add(
+                              DeleteConversationEvent(index),
+                            );
+                          },
+                        ),
                       );
-                      Navigator.pop(context);
                     },
+                  ),
+                ),
 
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete_outline),
-                      onPressed: () {
-                        context.read<GptBloc>().add(
-                          DeleteConversationEvent(index),
-                        );
+                SizedBox(height: 16),
+
+                //login/logout button
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (authStates is AuthenticatedState) {
+                          // LOGOUT
+                          await SessionManager.logout();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Logged out successfully")),
+                          );
+
+                          // Reload state
+                          context.read<GptBloc>().add(LoadInitialDataEvent());
+                        } else {
+                          // LOGIN (open mobile input sheet)
+                          showMobileNumberSheet(context);
+                        }
                       },
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            SizedBox(height: 16),
-
-            //login/logout button
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      child: Text(
+                        authStates is AuthenticatedState ? 'Logout' : 'Login',
+                      ),
                     ),
                   ),
-                  onPressed: () async {
-                    if (state.isLoggedIn) {
-                      // LOGOUT
-                      await SessionManager.logout();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Logged out successfully")),
-                      );
-
-                      // Reload state
-                      context.read<GptBloc>().add(LoadInitialDataEvent());
-                    } else {
-                      // LOGIN (open mobile input sheet)
-                      showMobileNumberSheet(context);
-                    }
-                  },
-                  child: Text(state.isLoggedIn ? 'Logout' : 'Login'),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

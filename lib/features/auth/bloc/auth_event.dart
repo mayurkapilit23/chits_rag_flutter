@@ -16,3 +16,13 @@ class VerifyOtpEvent extends AuthEvent {
   @override
   List<Object?> get props => [phone, otp];
 }
+
+class CheckAuthStatusEvent extends AuthEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class LogoutEvent extends AuthEvent {
+  @override
+  List<Object?> get props => [];
+}

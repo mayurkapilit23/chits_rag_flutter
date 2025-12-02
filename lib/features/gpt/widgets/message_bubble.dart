@@ -3,17 +3,30 @@ import 'package:flutter/material.dart';
 
 import '../model/message.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final Message message;
+  final VoidCallback? onTextChanged;
+
   final bool animate; // only last bot message should animate
 
-  const MessageBubble({super.key, required this.message, this.animate = false});
+  const MessageBubble({
+    super.key,
+    required this.message,
+    this.animate = false,
+    this.onTextChanged,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final isUser = message.isUser;
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
 
-    final bubbleColor = Colors.grey.shade200;
+class _MessageBubbleState extends State<MessageBubble> {
+  bool _hasAnimated = false;
+  @override
+  Widget build(BuildContext context) {
+    final isUser = widget.message.isUser;
+
+    final bubbleColor = isUser ? Color(0xFFE9F2FE) : Colors.grey.shade200;
 
     final textColor = isUser
         ? Colors.black
@@ -49,7 +62,26 @@ class MessageBubble extends StatelessWidget {
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  child: _buildMessageContent(textColor),
+                  // constrain width so long messages wrap instead of
+                  // causing layout issues or bleeding into other bubbles
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.72,
+                    ),
+                    child: MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaleFactor: 1.0),
+                      child: DefaultTextStyle(
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.4,
+                          color: textColor,
+                        ),
+                        child: _buildMessageContent(context, textColor, isUser),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -59,28 +91,47 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildMessageContent(Color? textColor) {
+  Widget _buildMessageContent(
+    BuildContext context,
+    Color? textColor,
+    bool isUser,
+  ) {
     // USER MESSAGE → NORMAL TEXT
-    if (message.isUser || !animate) {
+    if (widget.message.isUser || !widget.animate || _hasAnimated) {
       return SelectableText(
-        message.text,
-        style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+        widget.message.text,
+        textAlign: isUser ? TextAlign.right : TextAlign.left,
+        style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+        // allow wrapping for long prompts
+        maxLines: null,
       );
     }
 
     // BOT MESSAGE (last one only) → TYPEWRITER
-    return AnimatedTextKit(
-      key: ValueKey("bot-${message.id}-${message.text.length}"),
-      isRepeatingAnimation: false,
-      displayFullTextOnTap: true,
-      animatedTexts: [
-        TypewriterAnimatedText(
-          message.text,
-          textStyle: TextStyle(color: textColor, fontSize: 15, height: 1.4),
-          speed: const Duration(milliseconds: 40),
-          cursor: "|",
-        ),
-      ],
+    return RepaintBoundary(
+      child: AnimatedTextKit(
+        key: ValueKey(widget.message.id),
+        totalRepeatCount: 1,
+        isRepeatingAnimation: false,
+        displayFullTextOnTap: true,
+        animatedTexts: [
+          TypewriterAnimatedText(
+            widget.message.text,
+            textStyle: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+            speed: const Duration(milliseconds: 30),
+            cursor: "",
+          ),
+        ],
+        // wrap/align the animated text inside an Align so it respects
+        // the bubble's constrained width and the message side
+        onFinished: () {
+          widget.onTextChanged?.call();
+          setState(() => _hasAnimated = true);
+        },
+        onNext: (_, __) {
+          widget.onTextChanged?.call(); // 🔥 SCROLL DURING ANIMATION
+        },
+      ),
     );
   }
 }
