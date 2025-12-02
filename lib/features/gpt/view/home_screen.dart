@@ -57,6 +57,17 @@ class _HomeScreenState extends State<HomeScreen> {
         return false;
       },
       listener: (context, state) {
+        if (state is GptErrorState) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          });
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       },
       builder: (context, state) {
@@ -75,22 +86,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         //error state - show snackbar but keep UI visible
-        if (state is GptErrorState) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 4),
-              ),
-            );
-          });
-        }
 
         //loaded state (main UI) - also shown when error occurs
-        if (state is GptLoadedState ||
-            state is GptMessageSendingState ||
-            state is GptErrorState) {
+        if (state is GptLoadedState || state is GptMessageSendingState) {
           // WidgetsBinding.instance.addPostFrameCallback(
           //   (_) => ,
           // );
