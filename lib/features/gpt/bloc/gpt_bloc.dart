@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:chatgpt_clone/features/gpt/repo/gpt_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/utils/helper_methods.dart';
 import '../../auth/models/session_manager.dart';
 import '../model/conversation.dart';
 import '../model/message.dart';
@@ -150,7 +153,12 @@ class GptBloc extends Bloc<GptEvent, GptState> {
     } catch (e) {
       print("BLoC ERROR: $e");
 
-      emit(GptErrorState(e.toString()));
+      // emit(GptErrorState(e.toString()));
+
+      // Parse the error and get a user-friendly message
+      final userFriendlyError = getUserFriendlyError(e);
+
+      emit(GptErrorState(userFriendlyError));
     }
   }
 

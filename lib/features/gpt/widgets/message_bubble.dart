@@ -22,6 +22,7 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _hasAnimated = false;
+
   @override
   Widget build(BuildContext context) {
     final isUser = widget.message.isUser;
@@ -97,7 +98,9 @@ class _MessageBubbleState extends State<MessageBubble> {
     bool isUser,
   ) {
     // USER MESSAGE → NORMAL TEXT
-    if (widget.message.isUser || !widget.animate || _hasAnimated) {
+    if (widget.message.isUser ||
+        !widget.animate ||
+        widget.message.hasAnimated) {
       return SelectableText(
         widget.message.text,
         textAlign: isUser ? TextAlign.right : TextAlign.left,
@@ -125,8 +128,9 @@ class _MessageBubbleState extends State<MessageBubble> {
         // wrap/align the animated text inside an Align so it respects
         // the bubble's constrained width and the message side
         onFinished: () {
+          widget.message.hasAnimated = true; // <— FIX
           widget.onTextChanged?.call();
-          setState(() => _hasAnimated = true);
+          setState(() {});
         },
         onNext: (_, __) {
           widget.onTextChanged?.call(); // 🔥 SCROLL DURING ANIMATION

@@ -31,13 +31,12 @@ class MyAppState extends State<MyApp> {
         ),
       ],
       child: MaterialApp(
-        title: 'GPT',
+        title: 'KapilAI',
         debugShowCheckedModeBanner: false,
 
         theme: ThemeData(
-          fontFamily: GoogleFonts.poppins().fontFamily,
+          fontFamily: GoogleFonts.roboto().fontFamily,
           brightness: Brightness.light,
-          primarySwatch: Colors.indigo,
           inputDecorationTheme: InputDecorationTheme(border: InputBorder.none),
         ),
         home: HomeScreen(),

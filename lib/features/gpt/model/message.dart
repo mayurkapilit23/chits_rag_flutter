@@ -4,11 +4,13 @@ class Message {
   final String text;
   final DateTime time;
   final bool isUser;
+  bool hasAnimated; // <— NEW
 
   Message({
     required this.id,
     required this.text,
     required this.time,
     required this.isUser,
+    this.hasAnimated = false,
   });
 }
