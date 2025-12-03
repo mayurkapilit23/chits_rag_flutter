@@ -1,5 +1,8 @@
 import 'package:chatgpt_clone/features/auth/bloc/auth_bloc.dart';
 import 'package:chatgpt_clone/features/auth/bloc/auth_state.dart';
+import 'package:chatgpt_clone/features/theme/bloc/theme_bloc.dart';
+import 'package:chatgpt_clone/features/theme/bloc/theme_event.dart';
+import 'package:chatgpt_clone/features/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -57,13 +60,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     context.read<AuthBloc>().add(CheckAuthStatusEvent());
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocConsumer<GptBloc, GptState>(
       listenWhen: (prev, curr) {
         // Listen for error state changes
@@ -94,11 +97,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           key: Key('home_scaffold'),
-          backgroundColor: AppColors.primaryColor,
+          backgroundColor: isDark
+              ? AppColors.darkPrimary
+              : AppColors.primaryColor,
           drawer: state is GptLoadedState ? _buildDrawer(context, state) : null,
           appBar: state is GptLoadedState || state is GptMessageSendingState
               ? AppBar(
-                  backgroundColor: AppColors.primaryColor,
+                  backgroundColor: isDark
+                      ? AppColors.darkPrimary
+                      : AppColors.primaryColor,
                   surfaceTintColor: Colors.transparent,
                   elevation: 0,
                   actions: [
@@ -124,16 +131,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDrawer(BuildContext context, GptLoadedState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authStates) {
         return Drawer(
-          backgroundColor: Colors.white,
+          backgroundColor: isDark
+              ? AppColors.darkPrimary
+              : AppColors.primaryColor,
           child: SafeArea(
             child: Column(
               children: [
                 // NEW CHAT BUTTON
-                FItem(
-                  suffix: IconButton(
+                ListTile(
+                  trailing: IconButton(
                     onPressed: () {
                       context.read<GptBloc>().add(CreateConversationEvent());
                       Navigator.pop(context);
@@ -146,17 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // ListTile(
-                //   leading: Icon(Icons.add),
-                //   title: Text(
-                //     "New Chat",
-                //     style: TextStyle(fontWeight: FontWeight.bold),
-                //   ),
-                //   onTap: () {
-                //     context.read<GptBloc>().add(CreateConversationEvent());
-                //     Navigator.pop(context);
-                //   },
-                // ),
                 const FDivider(),
 
                 //conversation list
@@ -170,6 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           c.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.whiteColor
+                                : AppColors.darkPrimary,
+                          ),
                         ),
                         selected: index == state.selectedConversationIndex,
                         selectedTileColor: Colors.grey.withOpacity(0.15),
@@ -182,7 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
 
                         trailing: IconButton(
-                          icon: Icon(Icons.delete_outline),
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: isDark
+                                ? AppColors.whiteColor
+                                : AppColors.darkPrimary,
+                          ),
                           onPressed: () {
                             context.read<GptBloc>().add(
                               DeleteConversationEvent(index),
@@ -204,8 +213,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
+                        // backgroundColor: AppColors.darkSecondary,
+                        backgroundColor: isDark
+                            ? AppColors.primaryColor
+                            : AppColors.darkSecondary,
+                        foregroundColor: isDark
+                            ? AppColors.darkPrimary
+                            : Colors.white,
+
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -241,12 +256,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildComposer(BuildContext context, GptLoadedState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? AppColors.darkSecondary : AppColors.whiteColor,
             borderRadius: BorderRadius.circular(26),
             boxShadow: [
               BoxShadow(
@@ -275,7 +291,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
               //send button
               IconButton(
-                icon: Icon(Icons.send, color: Colors.black),
+                icon: Icon(
+                  Icons.send,
+                  color: isDark ? AppColors.whiteColor : AppColors.darkPrimary,
+                ),
                 onPressed: () {
                   final text = _input.text.trim();
                   if (text.isEmpty) return;
@@ -301,6 +320,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildContent(BuildContext context, GptState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenSize = MediaQuery.of(context).size;
     // Loading states
     if (state is GptInitialState || state is GptLoadingState) {
       return Center(child: CircularProgressIndicator());
@@ -340,7 +361,16 @@ class _HomeScreenState extends State<HomeScreen> {
             //message list
             Expanded(
               child: conv.messages.isEmpty
-                  ? Center(child: Text('KapilAI'))
+                  ? Center(
+                      child: Text(
+                        'KapilAI',
+                        style: TextStyle(
+                          color: isDark
+                              ? AppColors.whiteColor
+                              : AppColors.darkPrimary,
+                        ),
+                      ),
+                    )
                   : ListView.builder(
                       controller: _scroll,
                       padding: EdgeInsets.symmetric(
@@ -410,37 +440,56 @@ class _HomeScreenState extends State<HomeScreen> {
 void _showSettingsBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.white,
+    // backgroundColor: Colors.white,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     isScrollControlled: true,
     builder: (context) {
-      bool isDarkMode = false; // You should get this from your theme provider
-
-      return Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FItem(
-                prefix: Icon(FIcons.moon, size: 20),
-                title: const Text('Dark Mode'),
-                suffix: Switch(value: false, onChanged: (d) {}),
-                // onPress: () {},
+      return BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          bool isDarkMode = state.themeMode == ThemeMode.dark;
+          return Container(
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? AppColors.darkSecondary
+                  : AppColors.whiteColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    leading: Icon(FIcons.moon, size: 20),
+                    title: const Text('Dark Mode'),
+                    trailing: Switch(
+                      activeTrackColor: isDarkMode
+                          ? AppColors.darkPrimary
+                          : AppColors.darkSecondary,
+                      value: isDarkMode,
+                      onChanged: (value) {
+                        context.read<ThemeBloc>().add(ToggleThemeEvent());
+                      },
+                    ),
+                  ),
 
-              SizedBox(height: 15),
-            ],
-          ),
-        ),
+                  SizedBox(height: 15),
+                ],
+              ),
+            ),
+          );
+        },
       );
     },
   );

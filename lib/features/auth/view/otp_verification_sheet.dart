@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pinput/pinput.dart';
 
+import '../../../core/colors/app_colors.dart';
 import '../../gpt/bloc/gpt_bloc.dart';
 import '../../gpt/bloc/gpt_event.dart';
 import '../bloc/auth_bloc.dart';
@@ -37,6 +38,7 @@ class _OtpVerificationSheetState extends State<OtpVerificationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DraggableScrollableSheet(
       initialChildSize: 0.60,
       minChildSize: 0.40,
@@ -56,8 +58,8 @@ class _OtpVerificationSheetState extends State<OtpVerificationSheet> {
           builder: (context, state) {
             return Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSecondary : Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: SingleChildScrollView(
@@ -81,6 +83,9 @@ class _OtpVerificationSheetState extends State<OtpVerificationSheet> {
                       "Verify OTP",
                       style: TextStyle(
                         fontSize: 22,
+                        color: isDark
+                            ? AppColors.whiteColor
+                            : AppColors.darkPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

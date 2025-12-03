@@ -1,3 +1,4 @@
+import 'package:chatgpt_clone/core/colors/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -39,6 +40,7 @@ class _MobileNumberSheetState extends State<MobileNumberSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
       minChildSize: 0.35,
@@ -51,9 +53,11 @@ class _MobileNumberSheetState extends State<MobileNumberSheet> {
 
           child: Container(
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSecondary : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(25),
+              ),
             ),
             child: Form(
               key: _formKey,
@@ -94,9 +98,12 @@ class _MobileNumberSheetState extends State<MobileNumberSheet> {
                           ),
                         ),
 
-                        const Text(
+                        Text(
                           "Enter Mobile Number",
                           style: TextStyle(
+                            color: isDark
+                                ? AppColors.whiteColor
+                                : AppColors.darkPrimary,
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
                           ),
@@ -114,9 +121,22 @@ class _MobileNumberSheetState extends State<MobileNumberSheet> {
                           keyboardType: TextInputType.phone,
                           maxLength: 10,
                           autofocus: true,
+
                           decoration: InputDecoration(
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: isDark
+                                    ? Colors.white
+                                    : Colors.black, // 👈 focus border color
+                                width: 1.2,
+                              ),
+                            ),
                             counterText: "",
                             labelText: "Mobile Number",
+                            labelStyle: TextStyle(
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
                             prefixText: "+91 ",
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

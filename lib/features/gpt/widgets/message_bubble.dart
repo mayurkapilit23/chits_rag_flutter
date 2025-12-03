@@ -1,6 +1,7 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/colors/app_colors.dart';
 import '../model/message.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -21,17 +22,18 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
-  bool _hasAnimated = false;
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUser = widget.message.isUser;
 
-    final bubbleColor = isUser ? Color(0xFFE9F2FE) : Colors.grey.shade200;
+    final bubbleColor = isUser
+        ? (isDark ? AppColors.darkSecondary : Colors.grey.shade200)
+        : (isDark ? Colors.grey.shade800 : Colors.grey.shade300);
 
     final textColor = isUser
-        ? Colors.black
-        : Theme.of(context).textTheme.bodyLarge?.color;
+        ? (isDark ? Colors.white : Colors.black)
+        : (isDark ? Colors.white70 : Colors.black87);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),

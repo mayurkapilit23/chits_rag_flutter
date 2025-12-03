@@ -7,7 +7,11 @@ import 'package:chatgpt_clone/features/gpt/repo/gpt_services.dart';
 import 'package:chatgpt_clone/features/gpt/view/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'core/utils/app_dark_theme.dart';
+import 'core/utils/app_light_theme.dart';
+import 'features/theme/bloc/theme_bloc.dart';
+import 'features/theme/bloc/theme_state.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,17 +33,20 @@ class MyAppState extends State<MyApp> {
         BlocProvider<AuthBloc>(
           create: (_) => AuthBloc(AuthRepo(AuthServices())),
         ),
+        BlocProvider(create: (_) => ThemeBloc()),
       ],
-      child: MaterialApp(
-        title: 'KapilAI',
-        debugShowCheckedModeBanner: false,
-
-        theme: ThemeData(
-          fontFamily: GoogleFonts.roboto().fontFamily,
-          brightness: Brightness.light,
-          inputDecorationTheme: InputDecorationTheme(border: InputBorder.none),
-        ),
-        home: HomeScreen(),
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            title: 'KapilAI',
+            debugShowCheckedModeBanner: false,
+            theme: AppLightTheme.theme,
+            darkTheme: AppDarkTheme.theme,
+            themeMode: state.themeMode,
+            // controlled by bloc
+            home: HomeScreen(),
+          );
+        },
       ),
     );
   }
