@@ -1,13 +1,12 @@
 import 'package:chatgpt_clone/features/auth/bloc/auth_bloc.dart';
 import 'package:chatgpt_clone/features/auth/bloc/auth_state.dart';
-import 'package:chatgpt_clone/features/theme/bloc/theme_bloc.dart';
-import 'package:chatgpt_clone/features/theme/bloc/theme_event.dart';
-import 'package:chatgpt_clone/features/theme/bloc/theme_state.dart';
+import 'package:chatgpt_clone/features/gpt/widgets/custom_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:forui/forui.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/colors/app_colors.dart';
+import '../../../core/utils/bottom_sheets.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/view/mobile_number_sheet.dart';
 import '../bloc/gpt_bloc.dart';
@@ -62,6 +61,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<AuthBloc>().add(CheckAuthStatusEvent());
+
+    // IMPORTANT: listen to controller so setState runs on text changes
+    _input.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _input.removeListener(
+      () {},
+    ); // harmless if listener removed, but ok to keep
+    _input.dispose();
+    _scroll.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
-          key: Key('home_scaffold'),
+          key: const Key('home_scaffold'),
           backgroundColor: isDark
               ? AppColors.darkPrimary
               : AppColors.primaryColor,
@@ -113,12 +127,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         context.read<GptBloc>().add(CreateConversationEvent());
                       },
-                      icon: Icon(Icons.add, size: 20),
+                      icon: PhosphorIcon(PhosphorIcons.plus(), size: 20),
                     ),
                     IconButton(
-                      icon: Icon(Icons.settings_outlined),
+                      icon: const Icon(Icons.settings_outlined),
                       onPressed: () {
-                        _showSettingsBottomSheet(context);
+                        showSettingsBottomSheet(context);
                       },
                     ),
                   ],
@@ -148,7 +162,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       context.read<GptBloc>().add(CreateConversationEvent());
                       Navigator.pop(context);
                     },
-                    icon: Icon(Icons.add, size: 20),
+
+                    icon: PhosphorIcon(PhosphorIcons.plus(), size: 20),
                   ),
                   title: const Text(
                     'KapilAI',
@@ -156,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const FDivider(),
+                const Divider(),
 
                 //conversation list
                 Expanded(
@@ -187,7 +202,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         trailing: IconButton(
                           icon: Icon(
-                            Icons.delete_outline,
+                            Icons.delete,
+                            size: 20,
                             color: isDark
                                 ? AppColors.whiteColor
                                 : AppColors.darkPrimary,
@@ -203,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 //login/logout button
                 Padding(
@@ -290,27 +306,50 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(width: 6),
 
               //send button
-              IconButton(
-                icon: Icon(
-                  Icons.send,
-                  color: isDark ? AppColors.whiteColor : AppColors.darkPrimary,
-                ),
-                onPressed: () {
-                  final text = _input.text.trim();
-                  if (text.isEmpty) return;
-
-                  context.read<GptBloc>().add(
-                    SendUserMessageEvent(
-                      prompt: text,
-                      mobile: state.mobileNumber ?? "",
-                      sessionId: state
-                          .conversations[state.selectedConversationIndex]
-                          .id,
-                    ),
-                  );
-
-                  _input.clear();
+              AnimatedSwitcher(
+                duration: Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
                 },
+                child: _input.text.trim().isEmpty
+                    ? IconButton(
+                        key: ValueKey('mic'),
+                        icon: Icon(
+                          Icons.mic,
+                          size: 26,
+                          color: isDark
+                              ? AppColors.whiteColor
+                              : AppColors.darkPrimary,
+                        ),
+                        onPressed: () {
+                          print("Mic tapped");
+                        },
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          Icons.send,
+                          color: isDark
+                              ? AppColors.whiteColor
+                              : AppColors.darkPrimary,
+                        ),
+                        onPressed: () {
+                          final text = _input.text.trim();
+                          if (text.isEmpty) return;
+
+                          context.read<GptBloc>().add(
+                            SendUserMessageEvent(
+                              prompt: text,
+                              mobile: state.mobileNumber ?? "",
+                              sessionId: state
+                                  .conversations[state
+                                      .selectedConversationIndex]
+                                  .id,
+                            ),
+                          );
+
+                          _input.clear();
+                        },
+                      ),
               ),
             ],
           ),
@@ -321,7 +360,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent(BuildContext context, GptState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenSize = MediaQuery.of(context).size;
     // Loading states
     if (state is GptInitialState || state is GptLoadingState) {
       return Center(child: CircularProgressIndicator());
@@ -361,15 +399,46 @@ class _HomeScreenState extends State<HomeScreen> {
             //message list
             Expanded(
               child: conv.messages.isEmpty
-                  ? Center(
-                      child: Text(
-                        'KapilAI',
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.whiteColor
-                              : AppColors.darkPrimary,
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'KapilAI',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? AppColors.whiteColor
+                                : AppColors.darkPrimary,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            CustomChip(
+                              icon: Icons.flash_on_rounded,
+                              text: "Ask me about services",
+                              isDark: isDark,
+                            ),
+                            CustomChip(
+                              icon: Icons.lightbulb_outline,
+                              text: "How chitfund works",
+                              isDark: isDark,
+                            ),
+                            CustomChip(
+                              icon: Icons.person,
+                              text: "Founder",
+                              isDark: isDark,
+                            ),
+                            CustomChip(
+                              icon: Icons.bolt,
+                              text: "Registration process",
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
+                      ],
                     )
                   : ListView.builder(
                       controller: _scroll,
@@ -421,10 +490,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  // backgroundColor: AppColors.darkSecondary,
+                  backgroundColor: isDark
+                      ? AppColors.primaryColor
+                      : AppColors.darkSecondary,
+                  foregroundColor: isDark
+                      ? AppColors.darkPrimary
+                      : Colors.white,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed: () {
                   context.read<GptBloc>().add(LoadInitialDataEvent());
                 },
-                child: Text('Retry'),
+                child: const Text('Retry'),
               ),
             ],
           ),
@@ -433,64 +515,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Fallback - should not happen
-    return Center(child: Text('Unexpected state'));
+    return const Center(child: Text('Unexpected state'));
   }
-}
-
-void _showSettingsBottomSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    // backgroundColor: Colors.white,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    isScrollControlled: true,
-    builder: (context) {
-      return BlocBuilder<ThemeBloc, ThemeState>(
-        builder: (context, state) {
-          bool isDarkMode = state.themeMode == ThemeMode.dark;
-          return Container(
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? AppColors.darkSecondary
-                  : AppColors.whiteColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 20,
-              right: 20,
-              top: 20,
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    leading: Icon(FIcons.moon, size: 20),
-                    title: const Text('Dark Mode'),
-                    trailing: Switch(
-                      activeTrackColor: isDarkMode
-                          ? AppColors.darkPrimary
-                          : AppColors.darkSecondary,
-                      value: isDarkMode,
-                      onChanged: (value) {
-                        context.read<ThemeBloc>().add(ToggleThemeEvent());
-                      },
-                    ),
-                  ),
-
-                  SizedBox(height: 15),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
 }
