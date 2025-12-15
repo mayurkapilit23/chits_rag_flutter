@@ -298,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 6,
                   decoration: InputDecoration(
                     hintText: "Ask ChatGPT...",
+                    hintStyle: TextStyle(fontSize: 14),
                     border: InputBorder.none,
                   ),
                 ),
@@ -311,45 +312,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 transitionBuilder: (child, animation) {
                   return ScaleTransition(scale: animation, child: child);
                 },
-                child: _input.text.trim().isEmpty
-                    ? IconButton(
-                        key: ValueKey('mic'),
-                        icon: Icon(
-                          Icons.mic,
-                          size: 26,
-                          color: isDark
-                              ? AppColors.whiteColor
-                              : AppColors.darkPrimary,
-                        ),
-                        onPressed: () {
-                          print("Mic tapped");
-                        },
-                      )
-                    : IconButton(
-                        icon: Icon(
-                          Icons.send,
-                          color: isDark
-                              ? AppColors.whiteColor
-                              : AppColors.darkPrimary,
-                        ),
-                        onPressed: () {
-                          final text = _input.text.trim();
-                          if (text.isEmpty) return;
+                child: IconButton(
+                  icon: Icon(
+                    Icons.send,
+                    color: isDark
+                        ? AppColors.whiteColor
+                        : AppColors.darkPrimary,
+                  ),
+                  onPressed: () {
+                    final text = _input.text.trim();
+                    if (text.isEmpty) return;
 
-                          context.read<GptBloc>().add(
-                            SendUserMessageEvent(
-                              prompt: text,
-                              mobile: state.mobileNumber ?? "",
-                              sessionId: state
-                                  .conversations[state
-                                      .selectedConversationIndex]
-                                  .id,
-                            ),
-                          );
-
-                          _input.clear();
-                        },
+                    context.read<GptBloc>().add(
+                      SendUserMessageEvent(
+                        prompt: text,
+                        mobile: state.mobileNumber ?? "",
+                        sessionId: state
+                            .conversations[state.selectedConversationIndex]
+                            .id,
                       ),
+                    );
+
+                    _input.clear();
+                  },
+                ),
               ),
             ],
           ),
