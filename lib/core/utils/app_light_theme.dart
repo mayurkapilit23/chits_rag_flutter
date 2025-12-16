@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../colors/app_colors.dart';
+
 class AppLightTheme {
   static ThemeData theme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: Colors.indigo,
     scaffoldBackgroundColor: Colors.white,
-    fontFamily: 'poppins',
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppColors.whiteColor,
+    ),
 
+    // fontFamily: GoogleFonts.victorMono().fontFamily,
+    fontFamily: 'SegoeUI',
     textTheme: const TextTheme(
       headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
       bodyMedium: TextStyle(fontSize: 16),

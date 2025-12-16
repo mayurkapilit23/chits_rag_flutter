@@ -3,10 +3,10 @@ import 'package:chatgpt_clone/features/auth/bloc/auth_state.dart';
 import 'package:chatgpt_clone/features/gpt/widgets/custom_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/colors/app_colors.dart';
 import '../../../core/utils/bottom_sheets.dart';
+import '../../../core/utils/show_context_menu.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/view/mobile_number_sheet.dart';
 import '../bloc/gpt_bloc.dart';
@@ -117,28 +117,82 @@ class _HomeScreenState extends State<HomeScreen> {
           drawer: state is GptLoadedState ? _buildDrawer(context, state) : null,
           appBar: state is GptLoadedState || state is GptMessageSendingState
               ? AppBar(
+                  leadingWidth: 64,
+                  // important for spacing
+                  leading: Padding(
+                    padding: const EdgeInsets.only(left: 8), // your padding
+                    child: Builder(
+                      builder: (context) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.darkSecondary
+                                : AppColors.whiteColor,
+                            borderRadius: BorderRadius.circular(
+                              50,
+                            ), // smooth corners
+                            border: Border.all(
+                              color: isDark ? Colors.grey : Colors.transparent,
+                              width: 1,
+                            ),
+                          ),
+                          child: IconButton(
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                            icon: Icon(
+                              Icons.menu,
+                              color: isDark ? Colors.white : Colors.black,
+                              size: 22,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   backgroundColor: isDark
                       ? AppColors.darkPrimary
                       : AppColors.primaryColor,
                   surfaceTintColor: Colors.transparent,
                   elevation: 0,
                   actions: [
-                    IconButton(
-                      onPressed: () {
-                        context.read<GptBloc>().add(CreateConversationEvent());
-                      },
-                      icon: PhosphorIcon(PhosphorIcons.plus(), size: 20),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.settings_outlined),
-                      onPressed: () {
-                        showSettingsBottomSheet(context);
-                      },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkSecondary
+                              : AppColors.whiteColor,
+                          borderRadius: BorderRadius.circular(
+                            50,
+                          ), // smooth corners
+                          border: Border.all(
+                            color: isDark ? Colors.grey : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                context.read<GptBloc>().add(
+                                  CreateConversationEvent(),
+                                );
+                              },
+                              icon: Icon(Icons.add),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.settings_outlined),
+                              onPressed: () {
+                                showSettingsBottomSheet(context);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 )
               : null,
-          body: _buildContent(context, state),
+          body: SafeArea(child: _buildContent(context, state)),
         );
       },
     );
@@ -163,56 +217,62 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.pop(context);
                     },
 
-                    icon: PhosphorIcon(PhosphorIcons.plus(), size: 20),
+                    icon: Icon(Icons.add),
                   ),
                   title: const Text(
-                    'KapilAI',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'ChitsAI',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
-
-                const Divider(),
-
                 //conversation list
                 Expanded(
                   child: ListView.builder(
                     itemCount: state.conversations.length,
                     itemBuilder: (context, index) {
                       final c = state.conversations[index];
-                      return ListTile(
-                        title: Text(
-                          c.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.whiteColor
-                                : AppColors.darkPrimary,
-                          ),
-                        ),
-                        selected: index == state.selectedConversationIndex,
-                        selectedTileColor: Colors.grey.withOpacity(0.15),
-
-                        onTap: () {
-                          context.read<GptBloc>().add(
-                            SelectConversationEvent(index),
+                      return GestureDetector(
+                        onLongPressStart: (details) {
+                          showContextMenuAtPosition(
+                            context,
+                            details.globalPosition,
+                            index,
                           );
-                          Navigator.pop(context);
                         },
-
-                        trailing: IconButton(
-                          icon: Icon(
-                            Icons.delete,
-                            size: 20,
-                            color: isDark
-                                ? AppColors.whiteColor
-                                : AppColors.darkPrimary,
+                        child: ListTile(
+                          title: Text(
+                            c.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.whiteColor
+                                  : AppColors.darkPrimary,
+                            ),
                           ),
-                          onPressed: () {
+                          selected: index == state.selectedConversationIndex,
+                          selectedTileColor: Colors.grey.withOpacity(0.1),
+
+                          onTap: () {
                             context.read<GptBloc>().add(
-                              DeleteConversationEvent(index),
+                              SelectConversationEvent(index),
                             );
+                            Navigator.pop(context);
                           },
+
+                          // trailing: IconButton(
+                          //   icon: Icon(
+                          //     Icons.delete,
+                          //     size: 20,
+                          //     color: isDark
+                          //         ? AppColors.whiteColor
+                          //         : AppColors.darkPrimary,
+                          //   ),
+                          //   onPressed: () {
+                          //     context.read<GptBloc>().add(
+                          //       DeleteConversationEvent(index),
+                          //     );
+                          //   },
+                          // ),
                         ),
                       );
                     },
@@ -229,7 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        // backgroundColor: AppColors.darkSecondary,
                         backgroundColor: isDark
                             ? AppColors.primaryColor
                             : AppColors.darkSecondary,
@@ -279,10 +338,18 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSecondary : AppColors.whiteColor,
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(50),
+            border: isDark
+                ? Border.all(
+                    color: isDark
+                        ? Colors.grey.withOpacity(0.25)
+                        : Colors.grey.withOpacity(0.35),
+                    width: 1,
+                  )
+                : Border(),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 8,
                 offset: Offset(0, 3),
               ),
@@ -297,8 +364,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   minLines: 1,
                   maxLines: 6,
                   decoration: InputDecoration(
-                    hintText: "Ask ChatGPT...",
-                    hintStyle: TextStyle(fontSize: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    hintText: "Ask ChitsAI",
+                    hintStyle: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      // fontSize: 15,
+                      // color: isDark ? Colors.white : Colors.black,
+                      color: Colors.grey.shade500,
+                    ),
                     border: InputBorder.none,
                   ),
                 ),
@@ -313,11 +389,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ScaleTransition(scale: animation, child: child);
                 },
                 child: IconButton(
-                  icon: Icon(
-                    Icons.send,
-                    color: isDark
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark
                         ? AppColors.whiteColor
                         : AppColors.darkPrimary,
+                    shape: const CircleBorder(),
+                  ),
+                  icon: Icon(
+                    Icons.arrow_upward,
+                    color: isDark
+                        ? AppColors.darkPrimary
+                        : AppColors.whiteColor,
                   ),
                   onPressed: () {
                     final text = _input.text.trim();
@@ -389,8 +471,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'KapilAI',
+                          'ChitsAI',
                           style: TextStyle(
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                             color: isDark
                                 ? AppColors.whiteColor
@@ -403,23 +486,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           runSpacing: 10,
                           children: [
                             CustomChip(
-                              icon: Icons.flash_on_rounded,
-                              text: "Ask me about services",
+                              // icon: Icons.flash_on_rounded,
+                              text: "🛠️ Ask me about services",
                               isDark: isDark,
                             ),
                             CustomChip(
-                              icon: Icons.lightbulb_outline,
-                              text: "How chitfund works",
+                              text: "🤔 How chitfund works",
                               isDark: isDark,
                             ),
+                            CustomChip(text: "👨🏻‍💼 Founder", isDark: isDark),
                             CustomChip(
-                              icon: Icons.person,
-                              text: "Founder",
-                              isDark: isDark,
-                            ),
-                            CustomChip(
-                              icon: Icons.bolt,
-                              text: "Registration process",
+                              text: "🔄 Registration process",
                               isDark: isDark,
                             ),
                           ],
@@ -469,15 +546,10 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(Icons.error_outline, color: Colors.red, size: 48),
               SizedBox(height: 16),
-              Text(
-                state.message,
-                // style: TextStyle(color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
+              Text(state.message, textAlign: TextAlign.center),
               SizedBox(height: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  // backgroundColor: AppColors.darkSecondary,
                   backgroundColor: isDark
                       ? AppColors.primaryColor
                       : AppColors.darkSecondary,

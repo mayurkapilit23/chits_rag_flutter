@@ -75,6 +75,7 @@ class GptBloc extends Bloc<GptEvent, GptState> {
     final current = state as GptLoadedState;
     final conversations = List<Conversation>.from(current.conversations);
     final conversation = conversations[current.selectedConversationIndex];
+    final sessionId = event.sessionId ?? conversation.id;
 
     // Add user message
     final userMsg = Message(
@@ -126,7 +127,7 @@ class GptBloc extends Bloc<GptEvent, GptState> {
       final replyText = await repo.sendMessage(
         prompt: event.prompt,
         mobile: event.mobile,
-        sessionId: event.sessionId,
+        sessionId: sessionId,
       );
 
       print("GPT API Reply: $replyText");

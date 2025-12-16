@@ -1,15 +1,12 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+
+import '../repo/theme_repository.dart';
 
 class ThemeState extends Equatable {
-  final ThemeMode themeMode;
+  final AppTheme theme;
 
-  const ThemeState({required this.themeMode});
-
-  ThemeState copyWith({ThemeMode? themeMode}) {
-    return ThemeState(themeMode: themeMode ?? this.themeMode);
-  }
+  const ThemeState(this.theme);
 
   @override
-  List<Object?> get props => [themeMode];
+  List<Object?> get props => [theme];
 }

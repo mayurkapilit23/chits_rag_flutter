@@ -12,9 +12,24 @@ import 'core/utils/app_dark_theme.dart';
 import 'core/utils/app_light_theme.dart';
 import 'features/theme/bloc/theme_bloc.dart';
 import 'features/theme/bloc/theme_state.dart';
+import 'features/theme/repo/theme_repository.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final themeRepository = ThemeRepository();
+  final initialTheme = await themeRepository.getTheme();
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<GptBloc>(create: (_) => GptBloc(GptRepo(GptServices()))),
+        BlocProvider<AuthBloc>(
+          create: (_) => AuthBloc(AuthRepo(AuthServices())),
+        ),
+        BlocProvider(create: (_) => ThemeBloc(themeRepository, initialTheme)),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -27,27 +42,29 @@ class MyApp extends StatefulWidget {
 class MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<GptBloc>(create: (_) => GptBloc(GptRepo(GptServices()))),
-        BlocProvider<AuthBloc>(
-          create: (_) => AuthBloc(AuthRepo(AuthServices())),
-        ),
-        BlocProvider(create: (_) => ThemeBloc()),
-      ],
-      child: BlocBuilder<ThemeBloc, ThemeState>(
-        builder: (context, state) {
-          return MaterialApp(
-            title: 'KapilAI',
-            debugShowCheckedModeBanner: false,
-            theme: AppLightTheme.theme,
-            darkTheme: AppDarkTheme.theme,
-            themeMode: state.themeMode,
-            // controlled by bloc
-            home: HomeScreen(),
-          );
-        },
-      ),
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, state) {
+        return MaterialApp(
+          title: 'ChitsAI',
+          debugShowCheckedModeBanner: false,
+          theme: AppLightTheme.theme,
+          darkTheme: AppDarkTheme.theme,
+          themeMode: _mapThemeMode(state.theme),
+          // controlled by bloc
+          home: HomeScreen(),
+        );
+      },
     );
+  }
+
+  ThemeMode _mapThemeMode(AppTheme theme) {
+    switch (theme) {
+      case AppTheme.light:
+        return ThemeMode.light;
+      case AppTheme.dark:
+        return ThemeMode.dark;
+      case AppTheme.system:
+        return ThemeMode.system;
+    }
   }
 }

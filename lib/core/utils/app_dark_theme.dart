@@ -1,11 +1,39 @@
 import 'package:flutter/material.dart';
 
+import '../colors/app_colors.dart';
+
 class AppDarkTheme {
   static ThemeData theme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: Colors.indigo,
     scaffoldBackgroundColor: Colors.black,
-    fontFamily: 'poppins',
+    fontFamily: 'SegoeUI',
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppColors.darkSecondary,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return AppColors.whiteColor;
+        }
+        return Colors.grey.shade400;
+      }),
+      trackColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return AppColors.darkPrimary;
+        }
+        return Colors.grey.shade300;
+      }),
+      trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return Colors.transparent;
+        }
+        return Colors.grey.shade400;
+      }),
+      overlayColor: MaterialStateProperty.all(
+        AppColors.darkPrimary.withOpacity(0.15),
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
 
     textTheme: const TextTheme(
       headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),

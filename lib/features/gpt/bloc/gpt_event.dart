@@ -10,7 +10,7 @@ class LoadInitialDataEvent extends GptEvent {
 class SendUserMessageEvent extends GptEvent {
   final String prompt;
   final String mobile;
-  final String sessionId;
+  final String? sessionId;
 
   SendUserMessageEvent({
     required this.prompt,
