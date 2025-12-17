@@ -1,4 +1,5 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/colors/app_colors.dart';
@@ -6,9 +7,8 @@ import '../model/message.dart';
 
 class MessageBubble extends StatefulWidget {
   final Message message;
+  final bool animate;
   final VoidCallback? onTextChanged;
-
-  final bool animate; // only last bot message should animate
 
   const MessageBubble({
     super.key,
@@ -22,6 +22,47 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
+  late List<String> _words;
+  int _visibleWordCount = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _words = widget.message.text.split(' ');
+
+    final shouldAnimate =
+        widget.animate && !widget.message.isUser && !widget.message.hasAnimated;
+
+    if (shouldAnimate) {
+      _startWordFade();
+    } else {
+      _visibleWordCount = _words.length;
+    }
+  }
+
+  void _startWordFade() {
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 70), // 👈 speed
+      (timer) {
+        if (_visibleWordCount < _words.length) {
+          setState(() => _visibleWordCount++);
+          widget.onTextChanged?.call(); // auto-scroll
+        } else {
+          widget.message.hasAnimated = true;
+          timer.cancel();
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -29,120 +70,90 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final bubbleColor = isUser
         ? (isDark ? AppColors.darkSecondary : Colors.grey.shade200)
-        : (isDark ? Colors.grey.shade800 : Colors.grey.shade300);
+        // : (isDark ? Colors.grey.shade800 : Colors.grey.shade300);
+        : (isDark ? Colors.transparent : Colors.transparent);
 
     final textColor = isUser
         ? (isDark ? Colors.white : Colors.black)
         : (isDark ? Colors.white : Colors.black);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
-            child: Column(
-              crossAxisAlignment: isUser
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: bubbleColor,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        offset: Offset(0, 0.2),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  // constrain width so long messages wrap instead of
-                  // causing layout issues or bleeding into other bubbles
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.72,
-                    ),
-                    child: MediaQuery(
-                      data: MediaQuery.of(
-                        context,
-                      ).copyWith(textScaleFactor: 1.0),
-                      child: DefaultTextStyle(
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.4,
-                          color: textColor,
-                          fontFamily: 'SegoeUI',
-                        ),
-                        child: _buildMessageContent(context, textColor, isUser),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.72,
+              ),
+              decoration: BoxDecoration(
+                color: bubbleColor,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Wrap(
+                children: List.generate(_visibleWordCount, (index) {
+                  return _DelayedFadeWord(
+                    word: _words[index],
+                    delay: Duration(milliseconds: index * 30), //  stagger delay
+                    textColor: textColor,
+                  );
+                }),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildMessageContent(
-    BuildContext context,
-    Color? textColor,
-    bool isUser,
-  ) {
-    // USER MESSAGE → NORMAL TEXT
-    if (widget.message.isUser ||
-        !widget.animate ||
-        widget.message.hasAnimated) {
-      return SelectableText(
-        widget.message.text,
-        textAlign: isUser ? TextAlign.right : TextAlign.left,
-        style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
-        // allow wrapping for long prompts
-        maxLines: null,
-      );
-    }
+class _DelayedFadeWord extends StatefulWidget {
+  final String word;
+  final Duration delay;
+  final Color textColor;
 
-    // BOT MESSAGE (last one only) → TYPEWRITER
-    return RepaintBoundary(
-      child: AnimatedTextKit(
-        key: ValueKey(widget.message.id),
-        totalRepeatCount: 1,
-        isRepeatingAnimation: false,
-        displayFullTextOnTap: true,
-        animatedTexts: [
-          TypewriterAnimatedText(
-            widget.message.text,
-            textStyle: TextStyle(
-              color: textColor,
-              fontSize: 16,
-              height: 1.4,
-              fontFamily: 'SegoeUI',
-            ),
-            speed: const Duration(milliseconds: 30),
-            cursor: "",
-          ),
-        ],
-        // wrap/align the animated text inside an Align so it respects
-        // the bubble's constrained width and the message side
-        onFinished: () {
-          widget.message.hasAnimated = true; // <— FIX
-          widget.onTextChanged?.call();
-          setState(() {});
-        },
-        onNext: (_, __) {
-          widget.onTextChanged?.call(); // SCROLL DURING ANIMATION
-        },
+  const _DelayedFadeWord({
+    required this.word,
+    required this.delay,
+    required this.textColor,
+  });
+
+  @override
+  State<_DelayedFadeWord> createState() => _DelayedFadeWordState();
+}
+
+class _DelayedFadeWordState extends State<_DelayedFadeWord> {
+  double _opacity = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        setState(() => _opacity = 1);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _opacity,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: Text(
+        '${widget.word} ',
+        style: TextStyle(
+          fontSize: 16,
+          height: 1.4,
+          color: widget.textColor,
+          fontFamily: 'SegoeUI',
+        ),
       ),
     );
   }
