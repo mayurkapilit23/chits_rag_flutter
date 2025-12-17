@@ -37,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  bool _isUserNearBottom = true;
+
   // UI Controllers
   final ScrollController _scroll = ScrollController();
   final TextEditingController _input = TextEditingController();
@@ -44,16 +46,30 @@ class _HomeScreenState extends State<HomeScreen> {
   // Track if we've shown snackbar for current error
   String? _lastShownError;
 
-  void _scrollToBottom() {
-    if (_scroll.hasClients) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        _scroll.animateTo(
-          _scroll.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
-    }
+  // void _scrollToBottom() {
+  //   if (_scroll.hasClients) {
+  //     Future.delayed(Duration(milliseconds: 100), () {
+  //       _scroll.animateTo(
+  //         _scroll.position.maxScrollExtent,
+  //         duration: Duration(milliseconds: 300),
+  //         curve: Curves.easeOut,
+  //       );
+  //     });
+  //   }
+  // }
+
+  void _autoScrollIfNeeded() {
+    if (!_scroll.hasClients || !_isUserNearBottom) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scroll.hasClients) return;
+
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   void _showErrorSnackbar(BuildContext context, String message) {
@@ -79,6 +95,16 @@ class _HomeScreenState extends State<HomeScreen> {
     // IMPORTANT: listen to controller so setState runs on text changes
     _input.addListener(() {
       setState(() {});
+    });
+
+    _scroll.addListener(() {
+      if (!_scroll.hasClients) return;
+
+      final maxScroll = _scroll.position.maxScrollExtent;
+      final current = _scroll.position.pixels;
+
+      // threshold like ChatGPT (80px)
+      _isUserNearBottom = (maxScroll - current) < 80;
     });
   }
 
@@ -474,7 +500,8 @@ class _HomeScreenState extends State<HomeScreen> {
             loadedState.conversations[loadedState.selectedConversationIndex];
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
+          // _scrollToBottom();
+          _autoScrollIfNeeded();
         });
 
         return Column(
@@ -554,7 +581,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               index == conv.messages.length - 1,
                           onTextChanged: () {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
-                              _scrollToBottom();
+                              // _scrollToBottom();
+                              _autoScrollIfNeeded();
                             });
                           },
                         );

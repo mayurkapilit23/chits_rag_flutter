@@ -80,6 +80,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                           fontSize: 16,
                           height: 1.4,
                           color: textColor,
+                          fontFamily: 'SegoeUI',
                         ),
                         child: _buildMessageContent(context, textColor, isUser),
                       ),
@@ -122,7 +123,12 @@ class _MessageBubbleState extends State<MessageBubble> {
         animatedTexts: [
           TypewriterAnimatedText(
             widget.message.text,
-            textStyle: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+            textStyle: TextStyle(
+              color: textColor,
+              fontSize: 16,
+              height: 1.4,
+              fontFamily: 'SegoeUI',
+            ),
             speed: const Duration(milliseconds: 30),
             cursor: "",
           ),
@@ -135,7 +141,7 @@ class _MessageBubbleState extends State<MessageBubble> {
           setState(() {});
         },
         onNext: (_, __) {
-          widget.onTextChanged?.call(); // 🔥 SCROLL DURING ANIMATION
+          widget.onTextChanged?.call(); // SCROLL DURING ANIMATION
         },
       ),
     );
