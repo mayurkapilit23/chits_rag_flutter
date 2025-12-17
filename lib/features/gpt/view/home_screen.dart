@@ -23,6 +23,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  //for customChips
+  void _sendMessage(String text, GptLoadedState state) {
+    final message = text.trim();
+    if (message.isEmpty) return;
+
+    context.read<GptBloc>().add(
+      SendUserMessageEvent(
+        prompt: message,
+        mobile: state.mobileNumber ?? "",
+        sessionId: state.conversations[state.selectedConversationIndex].id,
+      ),
+    );
+  }
+
   // UI Controllers
   final ScrollController _scroll = ScrollController();
   final TextEditingController _input = TextEditingController();
@@ -318,6 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: Text(
                         authStates is AuthenticatedState ? 'Logout' : 'Login',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -489,15 +504,32 @@ class _HomeScreenState extends State<HomeScreen> {
                               // icon: Icons.flash_on_rounded,
                               text: "🛠️ Ask me about services",
                               isDark: isDark,
+                              onTap: () => _sendMessage(
+                                "Ask me about services",
+                                loadedState!,
+                              ),
                             ),
                             CustomChip(
                               text: "🤔 How chitfund works",
                               isDark: isDark,
+                              onTap: () => _sendMessage(
+                                "How chitfund works",
+                                loadedState!,
+                              ),
                             ),
-                            CustomChip(text: "👨🏻‍💼 Founder", isDark: isDark),
+                            CustomChip(
+                              text: "👨🏻‍💼 Founder",
+                              isDark: isDark,
+                              onTap: () =>
+                                  _sendMessage("Founder", loadedState!),
+                            ),
                             CustomChip(
                               text: "🔄 Registration process",
                               isDark: isDark,
+                              onTap: () => _sendMessage(
+                                "Registration process",
+                                loadedState!,
+                              ),
                             ),
                           ],
                         ),

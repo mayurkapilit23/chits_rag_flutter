@@ -33,7 +33,7 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final textColor = isUser
         ? (isDark ? Colors.white : Colors.black)
-        : (isDark ? Colors.white70 : Colors.black87);
+        : (isDark ? Colors.white : Colors.black);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
