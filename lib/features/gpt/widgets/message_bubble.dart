@@ -44,7 +44,7 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   void _startWordFade() {
     _timer = Timer.periodic(
-      const Duration(milliseconds: 70), // 👈 speed
+      const Duration(milliseconds: 70), //  speed
       (timer) {
         if (_visibleWordCount < _words.length) {
           setState(() => _visibleWordCount++);
@@ -94,14 +94,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                 color: bubbleColor,
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: Wrap(
-                children: List.generate(_visibleWordCount, (index) {
-                  return _DelayedFadeWord(
-                    word: _words[index],
-                    delay: Duration(milliseconds: index * 30), //  stagger delay
-                    textColor: textColor,
-                  );
-                }),
+              child: _DelayedFadeWord(
+                message: widget.message,
+                delay: Duration(milliseconds: 200), //  stagger delay
+                textColor: textColor,
               ),
             ),
           ),
@@ -112,14 +108,14 @@ class _MessageBubbleState extends State<MessageBubble> {
 }
 
 class _DelayedFadeWord extends StatefulWidget {
-  final String word;
   final Duration delay;
   final Color textColor;
+  final Message message;
 
   const _DelayedFadeWord({
-    required this.word,
     required this.delay,
     required this.textColor,
+    required this.message,
   });
 
   @override
@@ -143,18 +139,62 @@ class _DelayedFadeWordState extends State<_DelayedFadeWord> {
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
-      opacity: _opacity,
+      opacity: widget.message.isUser == false ? _opacity : 1,
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-      child: Text(
-        '${widget.word} ',
-        style: TextStyle(
-          fontSize: 16,
-          height: 1.4,
-          color: widget.textColor,
-          fontFamily: 'SegoeUI',
+      child: RichText(
+        textAlign: TextAlign.start,
+        text: TextSpan(
+          children: parseBoldText(widget.message.text, widget.textColor),
+          style: const TextStyle(fontFamily: 'SegoeUI'),
         ),
       ),
     );
+  }
+
+  List<TextSpan> parseBoldText(String text, Color color) {
+    final spans = <TextSpan>[];
+
+    final regex = RegExp(r'\*\*(.*?)\*\*');
+    int currentIndex = 0;
+
+    for (final match in regex.allMatches(text)) {
+      // Normal text before **
+      if (match.start > currentIndex) {
+        spans.add(
+          TextSpan(
+            text: text.substring(currentIndex, match.start),
+            style: TextStyle(fontSize: 16, height: 1.4, color: color),
+          ),
+        );
+      }
+
+      // Bold text (remove ** and add newline)
+      spans.add(
+        TextSpan(
+          text: '${match.group(1)}\n',
+          style: TextStyle(
+            fontSize: 16,
+            height: 1.4,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      );
+
+      currentIndex = match.end;
+    }
+
+    // Remaining normal text
+    if (currentIndex < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(currentIndex),
+          style: TextStyle(fontSize: 16, height: 1.4, color: color),
+        ),
+      );
+    }
+
+    return spans;
   }
 }
